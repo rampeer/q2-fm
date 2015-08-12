@@ -512,6 +512,104 @@ void SP_viewthing(edict_t *ent)
 	return;
 }
 
+/*QUAKED misc_mesh
+ITS A MESH!!
+*/
+
+void mesh_nextframe (edict_t *self)
+{
+	self->s.frame++;
+	self->owner->s.frame++;
+	self->nextthink = level.time + FRAMETIME;
+	if (self->s.frame==12) {
+		self->nextthink = level.time + FRAMETIME*10;
+		self->count = 0;
+	};
+};
+
+void mesh_startover (edict_t *self)
+{
+	self->s.frame = 5;
+	self->owner->s.frame = 0;
+	self->nextthink = level.time + FRAMETIME;
+	self->count = 1;
+};
+
+void mesh_think (edict_t *self)
+{
+	if (self->count == 1) {
+		mesh_nextframe(self);
+	} else {
+		mesh_startover(self);
+	};
+};
+
+void SP_misc_mesh (edict_t *self)
+{
+	self->owner = G_Spawn();
+	self->s.modelindex = gi.modelindex ("models/monsters/vore/legs.md2");
+	self->count = 0;
+	self->think = mesh_think;
+	self->nextthink = level.time + FRAMETIME;
+	self->owner->s.modelindex = gi.modelindex ("models/monsters/vore/this.md2");
+	gi.linkentity (self);
+	gi.linkentity (self->owner);
+};
+
+/*QUAKED misc_model (0 0.5 0) (-4 -4 -4) (4 4 4)
+In-game model for advanced decorations
+*/
+
+void SP_misc_model (edict_t *self)
+{
+	self->s.modelindex = gi.modelindex (self->message);
+	self->s.frame = self->count;
+	gi.linkentity (self);
+};
+
+void misc_model_animation_animate(edict_t *self)
+{
+	self->enemy->s.frame++;
+	if (self->enemy->s.frame < self->decel) {
+		self->nextthink = level.time + FRAMETIME;
+	}
+};
+
+void misc_model_animation_use(edict_t *self, edict_t *other, edict_t *activator)
+{
+	edict_t		*t;
+	
+	t = NULL;
+	self->enemy = NULL;
+	while ((t = G_Find (t, FOFS(targetname), self->target))) {
+		// doors fire area portals in a specific way
+		if (Q_stricmp(t->classname, "misc_model") != 0) {
+			gi.dprintf("misc_model_animation's TARGET must be misc_model\n");
+		} else {
+			if (self->enemy) {
+				gi.dprintf("misc_model_animation must target single misc_model\n");
+			} else {
+				self->enemy = t;
+			}
+		}
+	}
+	if (self->enemy) {
+		self->enemy->s.frame = self->accel;
+		self->nextthink = level.time + FRAMETIME;
+	}
+};
+
+void SP_misc_model_animation (edict_t *self)
+{
+	if (!self->target) {
+		gi.dprintf("misc_model_animation without TARGET\n");
+		return;
+	};
+	self->use = misc_model_animation_use;
+	self->think = misc_model_animation_animate;
+	gi.linkentity (self);
+};
+
 
 /*QUAKED info_null (0 0.5 0) (-4 -4 -4) (4 4 4)
 Used as a positional target for spotlights, etc.

@@ -96,6 +96,9 @@ void SP_info_notnull (edict_t *self);
 void SP_path_corner (edict_t *self);
 void SP_point_combat (edict_t *self);
 
+void SP_misc_mesh (edict_t *self);
+void SP_misc_model (edict_t *self);
+void SP_misc_model_animation (edict_t *self);
 void SP_misc_explobox (edict_t *self);
 void SP_misc_banner (edict_t *self);
 void SP_misc_satellite_dish (edict_t *self);
@@ -215,7 +218,10 @@ spawn_t	spawns[] = {
 	{"info_notnull", SP_info_notnull},
 	{"path_corner", SP_path_corner},
 	{"point_combat", SP_point_combat},
-
+	
+	{"misc_mesh", SP_misc_mesh},
+	{"misc_model", SP_misc_model},
+	{"misc_model_animation", SP_misc_model_animation},
 	{"misc_explobox", SP_misc_explobox},
 	{"misc_banner", SP_misc_banner},
 	{"misc_satellite_dish", SP_misc_satellite_dish},
