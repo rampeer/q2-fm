@@ -978,6 +978,15 @@ void SCR_ExecuteLayoutString (char *s)
 			x = viddef.width/2 - 160 + atoi(token);
 			continue;
 		}
+		if (!strcmp(token, "dscore"))
+		{
+			x = viddef.width - 100;
+			value = cl.frame.playerstate.stats[STAT_SCORE];
+
+			SCR_DrawField (x, 3, 0, 3, value);
+			Com_DPrintf("%i\n", value);
+			continue;
+		}
 
 		if (!strcmp(token, "yt"))
 		{

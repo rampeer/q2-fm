@@ -876,12 +876,14 @@ void CL_AddPacketEntities (frame_t *frame)
 			ent.frame = s1->frame;
 
 		// quad and pent can do different things on client
-		if (effects & EF_PENT)
-		{
-			effects &= ~EF_PENT;
-			effects |= EF_COLOR_SHELL;
-			renderfx |= RF_SHELL_RED;
-		}
+		if (!(effects & EF_BLASTER)) {
+			if (effects & EF_PENT)
+			{
+				effects &= ~EF_PENT;
+				effects |= EF_COLOR_SHELL;
+				renderfx |= RF_SHELL_RED;
+			}
+		};
 
 		if (effects & EF_QUAD)
 		{
@@ -1198,6 +1200,11 @@ void CL_AddPacketEntities (frame_t *frame)
 				{
 					CL_BlasterTrail2 (cent->lerp_origin, ent.origin);
 					V_AddLight (ent.origin, 200, 0, 1, 0);		
+				}
+				else if (effects & EF_PENT)
+				{
+					//CL_BlasterTrail (cent->lerp_origin, ent.origin);
+					V_AddLight (ent.origin, 300, 0, 0.578, 1);
 				}
 				else
 				{

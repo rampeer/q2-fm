@@ -36,6 +36,7 @@ void M_Menu_Main_f (void);
 	void M_Menu_Game_f (void);
 		void M_Menu_LoadGame_f (void);
 		void M_Menu_SaveGame_f (void);
+		void M_Menu_Survival_f (void);
 		void M_Menu_PlayerConfig_f (void);
 			void M_Menu_DownloadOptions_f (void);
 		void M_Menu_Credits_f( void );
@@ -1880,6 +1881,7 @@ static menuaction_s		s_medium_game_action;
 static menuaction_s		s_hard_game_action;
 static menuaction_s		s_load_game_action;
 static menuaction_s		s_save_game_action;
+static menuaction_s		s_survival_action;
 static menuaction_s		s_credits_action;
 static menuseparator_s	s_blankline;
 
@@ -1889,6 +1891,7 @@ static void StartGame( void )
 	cl.servercount = -1;
 	M_ForceMenuOff ();
 	Cvar_SetValue( "deathmatch", 0 );
+	Cvar_SetValue( "survival", 0 );
 	Cvar_SetValue( "coop", 0 );
 
 	Cvar_SetValue( "gamerules", 0 );		//PGM
@@ -1923,6 +1926,11 @@ static void LoadGameFunc( void *unused )
 static void SaveGameFunc( void *unused )
 {
 	M_Menu_SaveGame_f();
+}
+
+static void SurvivalFunc( void *unused )
+{
+	M_Menu_Survival_f();
 }
 
 static void CreditsFunc( void *unused )
@@ -1966,30 +1974,39 @@ void Game_MenuInit( void )
 
 	s_blankline.generic.type = MTYPE_SEPARATOR;
 
+	s_survival_action.generic.type	= MTYPE_ACTION;
+	s_survival_action.generic.flags  = QMF_LEFT_JUSTIFY;
+	s_survival_action.generic.x		= 0;
+	s_survival_action.generic.y		= 40;
+	s_survival_action.generic.name	= "survival mode";
+	s_survival_action.generic.callback = SurvivalFunc;
+
 	s_load_game_action.generic.type	= MTYPE_ACTION;
 	s_load_game_action.generic.flags  = QMF_LEFT_JUSTIFY;
 	s_load_game_action.generic.x		= 0;
-	s_load_game_action.generic.y		= 40;
+	s_load_game_action.generic.y		= 60;
 	s_load_game_action.generic.name	= "load game";
 	s_load_game_action.generic.callback = LoadGameFunc;
 
 	s_save_game_action.generic.type	= MTYPE_ACTION;
 	s_save_game_action.generic.flags  = QMF_LEFT_JUSTIFY;
 	s_save_game_action.generic.x		= 0;
-	s_save_game_action.generic.y		= 50;
+	s_save_game_action.generic.y		= 70;
 	s_save_game_action.generic.name	= "save game";
 	s_save_game_action.generic.callback = SaveGameFunc;
 
 	s_credits_action.generic.type	= MTYPE_ACTION;
 	s_credits_action.generic.flags  = QMF_LEFT_JUSTIFY;
 	s_credits_action.generic.x		= 0;
-	s_credits_action.generic.y		= 60;
+	s_credits_action.generic.y		= 80;
 	s_credits_action.generic.name	= "credits";
 	s_credits_action.generic.callback = CreditsFunc;
 
 	Menu_AddItem( &s_game_menu, ( void * ) &s_easy_game_action );
 	Menu_AddItem( &s_game_menu, ( void * ) &s_medium_game_action );
 	Menu_AddItem( &s_game_menu, ( void * ) &s_hard_game_action );
+	Menu_AddItem( &s_game_menu, ( void * ) &s_blankline );
+	Menu_AddItem( &s_game_menu, ( void * ) &s_survival_action );
 	Menu_AddItem( &s_game_menu, ( void * ) &s_blankline );
 	Menu_AddItem( &s_game_menu, ( void * ) &s_load_game_action );
 	Menu_AddItem( &s_game_menu, ( void * ) &s_save_game_action );
@@ -2017,7 +2034,77 @@ void M_Menu_Game_f (void)
 	M_PushMenu( Game_MenuDraw, Game_MenuKey );
 	m_game_cursor = 1;
 }
+/*
+=============================================================================
 
+SURVIVAL MENU
+
+=============================================================================
+*/
+static menuframework_s	s_survival_menu;
+static menuaction_s		s_sur_maps[10];
+
+void StartSurvMapCallback( void *self )
+{
+	menuaction_s *a = ( menuaction_s * ) self;
+	cl.servercount = -1;
+	M_ForceMenuOff ();
+	Cvar_SetValue( "deathmatch", 0 );
+	Cvar_SetValue( "survival", 0 );
+	Cvar_SetValue( "coop", 0 );
+	Cvar_SetValue ("survival", 1 );
+
+	Cvar_SetValue( "gamerules", 0 );		//PGM
+	
+	switch (a->generic.localdata[0]) {
+		case 0:
+			Cbuf_AddText ("loading ; killserver ; wait ; map surv1\n");
+			break;
+		case 1:
+			Cbuf_AddText ("loading ; killserver ; wait ; map surv2\n");
+			break;
+	};
+}
+
+void Survival_MenuInit( void )
+{
+	int c;
+	s_survival_menu.x = viddef.width * 0.50;
+	s_survival_menu.nitems = 0;
+	for (c=0; c<10; c++) {
+		s_sur_maps[c].generic.type	= MTYPE_ACTION;
+		s_sur_maps[c].generic.flags  = QMF_LEFT_JUSTIFY;
+		s_sur_maps[c].generic.x		= 0;
+		s_sur_maps[c].generic.y		= c*10;
+		s_sur_maps[c].generic.callback = StartSurvMapCallback;
+		s_sur_maps[c].generic.localdata[0] = c;
+	};
+	s_sur_maps[0].generic.name	= "Test map";
+	s_sur_maps[1].generic.name	= "Rail fun";
+
+	Menu_AddItem( &s_survival_menu, ( void * ) &s_sur_maps[0] );
+	Menu_AddItem( &s_survival_menu, ( void * ) &s_sur_maps[1] );
+
+	Menu_Center( &s_survival_menu );
+}
+
+void Survival_MenuDraw( void )
+{
+	M_Banner( "m_banner_game" );
+	Menu_AdjustCursor( &s_survival_menu, 1 );
+	Menu_Draw( &s_survival_menu );
+}
+
+const char *Survival_MenuKey( int key )
+{
+	return Default_MenuKey( &s_survival_menu, key );
+}
+
+void M_Menu_Survival_f (void)
+{
+	Survival_MenuInit();
+	M_PushMenu( Survival_MenuDraw, Survival_MenuKey );
+}
 /*
 =============================================================================
 
@@ -2448,6 +2535,7 @@ void StartServerActionFunc( void *self )
 //	Cvar_SetValue ("coop", s_rules_box.curvalue );
 
 //PGM
+	Cvar_SetValue ("survival", 0 );
 	if((s_rules_box.curvalue < 2) || (Developer_searchpath(2) != 2))
 	{
 		Cvar_SetValue ("deathmatch", !s_rules_box.curvalue );
@@ -3945,6 +4033,7 @@ void M_Init (void)
 	Cmd_AddCommand ("menu_game", M_Menu_Game_f);
 		Cmd_AddCommand ("menu_loadgame", M_Menu_LoadGame_f);
 		Cmd_AddCommand ("menu_savegame", M_Menu_SaveGame_f);
+		Cmd_AddCommand ("menu_survival", M_Menu_Survival_f);
 		Cmd_AddCommand ("menu_joinserver", M_Menu_JoinServer_f);
 			Cmd_AddCommand ("menu_addressbook", M_Menu_AddressBook_f);
 		Cmd_AddCommand ("menu_startserver", M_Menu_StartServer_f);
