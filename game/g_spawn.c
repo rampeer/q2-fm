@@ -118,6 +118,9 @@ void SP_misc_blackhole (edict_t *self);
 void SP_misc_eastertank (edict_t *self);
 void SP_misc_easterchick (edict_t *self);
 void SP_misc_easterchick2 (edict_t *self);
+void SP_misc_bubble (edict_t *ent);
+
+void SP_monster_vore (edict_t *self);
 
 void SP_monster_berserk (edict_t *self);
 void SP_monster_gladiator (edict_t *self);
@@ -126,6 +129,7 @@ void SP_monster_infantry (edict_t *self);
 void SP_monster_soldier_light (edict_t *self);
 void SP_monster_soldier (edict_t *self);
 void SP_monster_soldier_ss (edict_t *self);
+void SP_monster_soldier_mg (edict_t *self);
 void SP_monster_tank (edict_t *self);
 void SP_monster_medic (edict_t *self);
 void SP_monster_flipper (edict_t *self);
@@ -241,7 +245,9 @@ spawn_t	spawns[] = {
 	{"misc_eastertank", SP_misc_eastertank},
 	{"misc_easterchick", SP_misc_easterchick},
 	{"misc_easterchick2", SP_misc_easterchick2},
+	{"misc_bubble", SP_misc_bubble},
 
+	{"monster_vore", SP_monster_vore},
 	{"monster_berserk", SP_monster_berserk},
 	{"monster_gladiator", SP_monster_gladiator},
 	{"monster_gunner", SP_monster_gunner},
@@ -249,6 +255,7 @@ spawn_t	spawns[] = {
 	{"monster_soldier_light", SP_monster_soldier_light},
 	{"monster_soldier", SP_monster_soldier},
 	{"monster_soldier_ss", SP_monster_soldier_ss},
+	{"monster_soldier_mg", SP_monster_soldier_mg},
 	{"monster_tank", SP_monster_tank},
 	{"monster_tank_commander", SP_monster_tank},
 	{"monster_medic", SP_monster_medic},

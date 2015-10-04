@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "g_local.h"
 
-
 /*QUAKED func_group (0 0 0) ?
 Used to group brushes together just for editor convenience.
 */
@@ -1565,7 +1564,6 @@ void SP_misc_satellite_dish (edict_t *ent)
 	gi.linkentity (ent);
 }
 
-
 /*QUAKED light_mine1 (0 1 0) (-2 -2 -12) (2 2 12)
 */
 void SP_light_mine1 (edict_t *ent)
@@ -1583,7 +1581,12 @@ void SP_light_mine2 (edict_t *ent)
 {
 	ent->movetype = MOVETYPE_NONE;
 	ent->solid = SOLID_BBOX;
-	ent->s.modelindex = gi.modelindex ("models/objects/minelite/light2/tris.md2");
+	if (ent->count == 2) {
+		ent->s.modelindex = gi.modelindex ("models/wlamp/tris.md2");
+	} else {
+		ent->s.modelindex = gi.modelindex ("models/objects/minelite/light2/tris.md2");
+
+	};
 	gi.linkentity (ent);
 }
 
@@ -1974,3 +1977,69 @@ void SP_misc_teleporter_dest (edict_t *ent)
 	gi.linkentity (ent);
 }
 
+/*QUAKED misc_bubble
+*/
+void bubble_think (edict_t *ent) {
+	ent->velocity[0]=ent->velocity[0]*0.7;
+	ent->velocity[1]=ent->velocity[1]*0.7;
+	if (ent->spawnflags & 1) {
+		ent->s.angles[0]=15+ent->s.angles[0]+random()*30;
+		ent->velocity[0]+=sin(ent->s.angles[0])*5;
+		ent->velocity[1]+=cos(ent->s.angles[0])*5;
+	} else {
+		ent->velocity[0]+=random()*3;
+		ent->velocity[1]+=random()*3;
+	};
+	if (ent->spawnflags & 2) {
+		gi.WriteByte (svc_temp_entity);
+		gi.WriteByte (TE_BUBBLETRAIL);
+		gi.WritePosition (ent->s.old_origin);
+		gi.WritePosition (ent->s.origin);
+		gi.multicast (ent->s.origin, MULTICAST_PVS);
+	};
+	ent->velocity[2]+=random()*3;
+	ent->velocity[2]=ent->velocity[2]+5;
+	if (!(gi.pointcontents(ent->s.origin) & MASK_WATER)) {		//Шарик не должен выходить
+		if (ent->spawnflags & 2) {								// из воды.
+			gi.WriteByte (svc_temp_entity);
+			gi.WriteByte (TE_SPLASH);
+			gi.WriteByte (8);
+			gi.WritePosition (ent->s.origin);
+			VectorSet(ent->s.angles,0,0,1);
+			gi.WriteDir (ent->s.angles);
+			gi.WriteByte (2);
+			gi.multicast (ent->s.origin, MULTICAST_PVS);
+		};
+		gi.unlinkentity(ent);
+		G_FreeEdict(ent);
+		return;
+	};
+	ent->nextthink=level.time+FRAMETIME;
+};
+
+void SP_misc_bubble (edict_t *ent)
+{
+	float r;
+	r=random();
+	if (r<0.2) {
+		ent->s.sound=gi.soundindex("world/bubl1.wav");
+	} else if (r<0.4) {
+		ent->s.sound=gi.soundindex("world/bubl2.wav");
+	} else if (r<0.6) {
+		ent->s.sound=gi.soundindex("world/bubl3.wav");
+	};
+	if (ent->spawnflags & 1) {
+		ent->s.angles[0]=15+ent->s.angles[0]+random()*30;
+		ent->velocity[0]+=sin(ent->s.angles[0])*5;
+		ent->velocity[1]+=cos(ent->s.angles[0])*5;
+	} else {
+		ent->velocity[0]+=random()*3;
+		ent->velocity[1]+=random()*3;
+	};
+	ent->movetype = MOVETYPE_PUSH;
+	ent->think=bubble_think;
+	ent->nextthink=level.time+FRAMETIME;
+	ent->s.modelindex = gi.modelindex ("sprites/s_bubble.sp2");
+	ent->s.frame=0;
+	gi.linkentity (ent);
+};
