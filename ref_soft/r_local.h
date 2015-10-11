@@ -191,11 +191,11 @@ extern oldrefdef_t      r_refdef;
 
 #define DS_SPAN_LIST_END        -128
 
-#define NUMSTACKEDGES           2000
+#define NUMSTACKEDGES           8000
 #define MINEDGES                        NUMSTACKEDGES
-#define NUMSTACKSURFACES        1000
+#define NUMSTACKSURFACES        4000
 #define MINSURFACES                     NUMSTACKSURFACES
-#define MAXSPANS                        3000
+#define MAXSPANS                        12000
 
 // flags in finalvert_t.flags
 #define ALIAS_LEFT_CLIP                         0x0001

@@ -301,6 +301,7 @@ void GL_DrawAliasFrameLerp (dmdl_t *paliashdr, float backlerp)
 GL_DrawAliasShadow
 =============
 */
+extern	qboolean		have_stencil; 
 extern	vec3_t			lightspot;
 
 void GL_DrawAliasShadow (dmdl_t *paliashdr, int posenum)
@@ -321,7 +322,11 @@ void GL_DrawAliasShadow (dmdl_t *paliashdr, int posenum)
 	height = 0;
 
 	order = (int *)((byte *)paliashdr + paliashdr->ofs_glcmds);
-
+	if (have_stencil) {
+		qglEnable(GL_STENCIL_TEST);
+		qglStencilFunc(GL_EQUAL,1,2);
+		qglStencilOp(GL_KEEP,GL_KEEP,GL_INCR);
+	} 
 	height = -lheight + 1.0;
 
 	while (1)
@@ -363,6 +368,7 @@ void GL_DrawAliasShadow (dmdl_t *paliashdr, int posenum)
 
 		qglEnd ();
 	}	
+	if (have_stencil) qglDisable(GL_STENCIL_TEST); 
 }
 
 #endif

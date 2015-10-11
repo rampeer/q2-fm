@@ -722,7 +722,7 @@ void R_SetupGL (void)
 //	yfov = 2*atan((float)r_newrefdef.height/r_newrefdef.width)*180/M_PI;
 	qglMatrixMode(GL_PROJECTION);
     qglLoadIdentity ();
-    MYgluPerspective (r_newrefdef.fov_y,  screenaspect,  4,  4096);
+    MYgluPerspective (r_newrefdef.fov_y,  screenaspect,  4,  12000);		//MODIFICATED
 
 	qglCullFace(GL_FRONT);
 
@@ -794,7 +794,10 @@ void R_Clear (void)
 	}
 
 	qglDepthRange (gldepthmin, gldepthmax);
-
+	if (gl_shadows->value) {
+		qglClearStencil(1);
+		qglClear(GL_STENCIL_BUFFER_BIT);
+	} 
 }
 
 void R_Flash( void )

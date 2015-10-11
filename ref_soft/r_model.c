@@ -578,8 +578,11 @@ void CalcSurfaceExtents (msurface_t *s)
 		s->extents[i] = (bmaxs[i] - bmins[i]) * 16;
 		if (s->extents[i] < 16)
 			s->extents[i] = 16;	// take at least one cache block
-		if ( !(tex->flags & (SURF_WARP|SURF_SKY)) && s->extents[i] > 256)
-			ri.Sys_Error (ERR_DROP,"Bad surface extents");
+		if ( !(tex->flags & (SURF_WARP|SURF_SKY)) && s->extents[i] > 256) {
+			ri.Con_Printf(PRINT_ALL, "At %d %d %d bad surface extent\n", (mins[0]+maxs[0])/2, (mins[1]+maxs[1])/2, (mins[2]+maxs[2])/2);
+			s->extents[i] = 256;
+			//ri.Sys_Error (ERR_DROP,"Bad surface extents");
+		}
 	}
 }
 

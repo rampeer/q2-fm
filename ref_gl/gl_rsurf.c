@@ -881,16 +881,38 @@ void R_DrawInlineBModel (void)
 	int			i, k;
 	cplane_t	*pplane;
 	float		dot;
-	msurface_t	*psurf;
+	msurface_t	*psurf, *s;
+	qboolean	duplicate;
 	dlight_t	*lt;
 
 	// calculate dynamic lighting for bmodel
 	if ( !gl_flashblend->value )
 	{
 		lt = r_newrefdef.dlights;
-		for (k=0 ; k<r_newrefdef.num_dlights ; k++, lt++)
+		// special method for models with rotation
+		if (currententity->angles[0] || currententity->angles[1] || currententity->angles[2])
 		{
-			R_MarkLights (lt, 1<<k, currentmodel->nodes + currentmodel->firstnode);
+			vec3_t temp;
+			vec3_t forward, right, up;
+			AngleVectors (currententity->angles, forward, right, up);
+			for (k=0; k<r_newrefdef.num_dlights; k++, lt++)
+			{
+				VectorSubtract (lt->origin, currententity->origin, temp);
+				lt->origin[0] = DotProduct (temp, forward);
+				lt->origin[1] = -DotProduct (temp, right);
+				lt->origin[2] = DotProduct (temp, up);
+				R_MarkLights (lt, 1<<k, currentmodel->nodes + currentmodel->firstnode);
+				VectorAdd (temp, currententity->origin, lt->origin);
+			}
+		} 
+		else
+		{
+			for (k=0 ; k<r_newrefdef.num_dlights ; k++, lt++)
+			{	
+				VectorSubtract (lt->origin, currententity->origin, lt->origin);	// factor in entity origin
+				R_MarkLights (lt, 1<<k, currentmodel->nodes + currentmodel->firstnode);
+				VectorAdd (lt->origin, currententity->origin, lt->origin);	// factor in entity origin
+			}
 		}
 	}
 
@@ -917,10 +939,23 @@ void R_DrawInlineBModel (void)
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
 		{
+			psurf->entity = NULL; // Knightmare- entity pointer
 			if (psurf->texinfo->flags & (SURF_TRANS33|SURF_TRANS66) )
 			{	// add to the translucent chain
-				psurf->texturechain = r_alpha_surfaces;
-				r_alpha_surfaces = psurf;
+				// if bmodel is used by multiple entities, adding surface
+				// to linked list more than once would result in an infinite loop
+				duplicate = false;
+				for (s = r_alpha_surfaces; s; s = s->texturechain)
+					if (s == psurf) {
+						duplicate = true;
+						break;
+					}
+				if (!duplicate) // Don't allow surface to be added twice (fixes hang)
+				{
+					psurf->texturechain = r_alpha_surfaces;
+					r_alpha_surfaces = psurf;
+					psurf->entity = currententity; // Knightmare- entity pointer to support movement
+				}
 			}
 			else if ( qglMTexCoord2fSGIS && !( psurf->flags & SURF_DRAWTURB ) )
 			{
@@ -1011,7 +1046,10 @@ e->angles[2] = -e->angles[2];	// stupid quake bug
 	GL_SelectTexture( GL_TEXTURE0);
 	GL_TexEnv( GL_REPLACE );
 	GL_SelectTexture( GL_TEXTURE1);
-	GL_TexEnv( GL_MODULATE );
+	if ( gl_lightmap->value )	// Knightmare- show lightmaps on bmodels, too
+		GL_TexEnv( GL_REPLACE );
+	else 
+		GL_TexEnv( GL_MODULATE );
 
 	R_DrawInlineBModel ();
 	GL_EnableMultitexture( false );

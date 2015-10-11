@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 int	r_dlightframecount;
 
-#define	DLIGHT_CUTOFF	64
+#define	DLIGHT_CUTOFF	32
 
 /*
 =============================================================================
@@ -145,7 +145,7 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 	{
 		if (surf->dlightframe != r_dlightframecount)
 		{
-			surf->dlightbits = 0;
+			surf->dlightbits = bit;	//MODIFICATED KMOD
 			surf->dlightframe = r_dlightframecount;
 		}
 		surf->dlightbits |= bit;
@@ -350,7 +350,7 @@ void R_LightPoint (vec3_t p, vec3_t color)
 
 //===================================================================
 
-static float s_blocklights[34*34*3];
+static float s_blocklights[128*128*4]; //MODIFICATED KMOD
 /*
 ===============
 R_AddDynamicLights
@@ -369,10 +369,35 @@ void R_AddDynamicLights (msurface_t *surf)
 	dlight_t	*dl;
 	float		*pfBL;
 	float		fsacc, ftacc;
+	qboolean	rotated = false;
+	vec3_t		dlorigin, temp, entOrigin, entAngles, forward, right, up;
 
 	smax = (surf->extents[0]>>4)+1;
 	tmax = (surf->extents[1]>>4)+1;
 	tex = surf->texinfo;
+
+	// MODIFICATED KMOD
+	if (tex->flags & (SURF_TRANS33|SURF_TRANS66)) {
+		if (surf->entity) {
+			VectorCopy (surf->entity->origin, entOrigin);
+			VectorCopy (surf->entity->angles, entAngles);
+		}
+		else {
+			VectorCopy (vec3_origin, entOrigin);
+			VectorCopy (vec3_origin, entAngles);
+		}
+	}
+	else {
+		VectorCopy (currententity->origin, entOrigin);
+		VectorCopy (currententity->angles, entAngles);
+	}
+
+	if (entAngles[0] || entAngles[1] || entAngles[2])
+	{
+		rotated = true;
+		AngleVectors (entAngles, forward, right, up);
+	}
+	// end Knightmare
 
 	for (lnum=0 ; lnum<r_newrefdef.num_dlights ; lnum++)
 	{
@@ -381,8 +406,21 @@ void R_AddDynamicLights (msurface_t *surf)
 
 		dl = &r_newrefdef.dlights[lnum];
 		frad = dl->intensity;
-		fdist = DotProduct (dl->origin, surf->plane->normal) -
-				surf->plane->dist;
+
+		// Knightmare- factor in entity movement
+		VectorCopy (dl->origin, dlorigin);
+		VectorSubtract (dlorigin, entOrigin, dlorigin);
+		if (rotated)
+		{
+			VectorCopy (dlorigin, temp);
+			dlorigin[0] = DotProduct (temp, forward);
+			dlorigin[1] = -DotProduct (temp, right);
+			dlorigin[2] = DotProduct (temp, up);
+		}
+		//	fdist = DotProduct (dl->origin, surf->plane->normal) -	surf->plane->dist;
+		fdist = DotProduct (dlorigin, surf->plane->normal) - surf->plane->dist;
+		// end Knightmare
+
 		frad -= fabs(fdist);
 		// rad is now the highest intensity on the plane
 
@@ -392,9 +430,9 @@ void R_AddDynamicLights (msurface_t *surf)
 		fminlight = frad - fminlight;
 
 		for (i=0 ; i<3 ; i++)
-		{
-			impact[i] = dl->origin[i] -
-					surf->plane->normal[i]*fdist;
+		{	// Knightmare- use adjusted light origin
+		//	impact[i] = dl->origin[i] - surf->plane->normal[i]*fdist;
+			impact[i] = dlorigin[i] - surf->plane->normal[i]*fdist;
 		}
 
 		local[0] = DotProduct (impact, tex->vecs[0]) + tex->vecs[0][3] - surf->texturemins[0];

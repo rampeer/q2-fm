@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ref_gl", "ref_gl.vcproj", "{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug Alpha|Win32 = Debug Alpha|Win32
+		Debug|Win32 = Debug|Win32
+		Release Alpha|Win32 = Release Alpha|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Debug Alpha|Win32.ActiveCfg = Debug Alpha|Win32
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Debug Alpha|Win32.Build.0 = Debug Alpha|Win32
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Debug|Win32.ActiveCfg = Debug|Win32
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Debug|Win32.Build.0 = Debug|Win32
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Release Alpha|Win32.ActiveCfg = Release Alpha|Win32
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Release Alpha|Win32.Build.0 = Release Alpha|Win32
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Release|Win32.ActiveCfg = Release|Win32
+		{01F7D96F-5F0C-40C3-A2B9-175BEDEF9416}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
