@@ -23,8 +23,11 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 qboolean	Pickup_Weapon (edict_t *ent, edict_t *other);
 void		Use_Weapon (edict_t *ent, gitem_t *inv);
 void		Drop_Weapon (edict_t *ent, gitem_t *inv);
+void		Touch_Item (edict_t *ent, edict_t *other, cplane_t *plane, csurface_t *surf);
 
+void Weapon_Hand (edict_t *ent);
 void Weapon_Blaster (edict_t *ent);
+void Weapon_Flare (edict_t *ent);
 void Weapon_Shotgun (edict_t *ent);
 void Weapon_SuperShotgun (edict_t *ent);
 void Weapon_Machinegun (edict_t *ent);
@@ -35,6 +38,10 @@ void Weapon_Grenade (edict_t *ent);
 void Weapon_GrenadeLauncher (edict_t *ent);
 void Weapon_Railgun (edict_t *ent);
 void Weapon_BFG (edict_t *ent);
+
+void Weapon_GrenadeLauncher_Altfire (edict_t *ent);
+void Weapon_Machinegun_Altfire (edict_t *ent);
+void Weapon_HyperBlaster_AltFire(edict_t *ent);
 
 gitem_armor_t jacketarmor_info	= { 25,  50, .30, .00, ARMOR_JACKET};
 gitem_armor_t combatarmor_info	= { 50, 100, .60, .30, ARMOR_COMBAT};
@@ -1161,7 +1168,8 @@ gitem_t	itemlist[] =
 		0,
 		&bodyarmor_info,
 		ARMOR_BODY,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_armor_combat (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1184,7 +1192,8 @@ gitem_t	itemlist[] =
 		0,
 		&combatarmor_info,
 		ARMOR_COMBAT,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_armor_jacket (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1207,7 +1216,8 @@ gitem_t	itemlist[] =
 		0,
 		&jacketarmor_info,
 		ARMOR_JACKET,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_armor_shard (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1230,7 +1240,8 @@ gitem_t	itemlist[] =
 		0,
 		NULL,
 		ARMOR_SHARD,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 
@@ -1254,7 +1265,8 @@ gitem_t	itemlist[] =
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_power_shield (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1306,7 +1318,8 @@ always owned, never in the world
 		WEAP_BLASTER,
 		NULL,
 		0,
-/* precache */ "weapons/blastf1a.wav misc/lasfly.wav"
+/* precache */ "weapons/blastf1a.wav misc/lasfly.wav",
+		NULL
 	},
 
 /*QUAKED weapon_shotgun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1329,7 +1342,32 @@ always owned, never in the world
 		WEAP_SHOTGUN,
 		NULL,
 		0,
-/* precache */ "weapons/shotgf1b.wav weapons/shotgr1b.wav"
+/* precache */ "weapons/shotgf1b.wav weapons/shotgr1b.wav",
+		NULL
+	},
+
+	/*QUAKED weapon_hand (.3 .3 1) (-16 -16 -16) (16 16 16)
+*/
+	{		
+		"weapon_hand", 
+		Pickup_Weapon,
+		Use_Weapon,
+		NULL,
+		Weapon_Hand,
+		"misc/w_pkup.wav",
+		"models/hands/tris.md2", EF_ROTATE,
+		"models/hands/tris.md2",
+/* icon */		"w_hand",
+/* pickup */	"Hand",
+		0,
+		0,
+		NULL,
+		IT_WEAPON|IT_STAY_COOP,
+		WEAP_BLASTER,
+		NULL,
+		0,
+/* precache */ "weapons/shotgf1b.wav weapons/shotgr1b.wav",
+		NULL
 	},
 
 /*QUAKED weapon_supershotgun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1352,7 +1390,8 @@ always owned, never in the world
 		WEAP_SUPERSHOTGUN,
 		NULL,
 		0,
-/* precache */ "weapons/sshotf1b.wav"
+/* precache */ "weapons/sshotf1b.wav",
+		NULL
 	},
 
 /*QUAKED weapon_machinegun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1375,7 +1414,8 @@ always owned, never in the world
 		WEAP_MACHINEGUN,
 		NULL,
 		0,
-/* precache */ "weapons/machgf1b.wav weapons/machgf2b.wav weapons/machgf3b.wav weapons/machgf4b.wav weapons/machgf5b.wav"
+/* precache */ "weapons/machgf1b.wav weapons/machgf2b.wav weapons/machgf3b.wav weapons/machgf4b.wav weapons/machgf5b.wav",
+		Weapon_Machinegun_Altfire
 	},
 
 /*QUAKED weapon_chaingun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1398,7 +1438,8 @@ always owned, never in the world
 		WEAP_CHAINGUN,
 		NULL,
 		0,
-/* precache */ "weapons/chngnu1a.wav weapons/chngnl1a.wav weapons/machgf3b.wav` weapons/chngnd1a.wav"
+/* precache */ "weapons/chngnu1a.wav weapons/chngnl1a.wav weapons/machgf3b.wav` weapons/chngnd1a.wav",
+		NULL
 	},
 
 /*QUAKED ammo_grenades (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1421,8 +1462,34 @@ always owned, never in the world
 		WEAP_GRENADES,
 		NULL,
 		AMMO_GRENADES,
-/* precache */ "weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav "
+/* precache */ "weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav ",
+		NULL
 	},
+
+/*QUAKED ammo_flare (.3 .3 1) (-16 -16 -16) (16 16 16)
+*/
+	{
+		"ammo_flare",
+		Pickup_Ammo,
+		Use_Weapon,
+		Drop_Ammo,
+		Weapon_Flare,
+		"misc/am_pkup.wav",
+		"models/items/ammo/grenades/medium/tris.md2", EF_BLASTER | EF_PENT,
+		"models/weapons/v_handgr/tris.md2",
+/* icon */		"a_grenades",
+/* pickup */	"Flares",
+/* width */		3,
+		1,
+		"flares",
+		IT_AMMO|IT_WEAPON,
+		WEAP_GRENADES,
+		NULL,
+		AMMO_FLARES,
+/* precache */ "weapons/hgrent1a.wav weapons/hgrena1b.wav weapons/hgrenc1b.wav weapons/hgrenb1a.wav weapons/hgrenb2a.wav ",
+		NULL
+	},
+
 
 /*QUAKED weapon_grenadelauncher (.3 .3 1) (-16 -16 -16) (16 16 16)
 */
@@ -1444,7 +1511,8 @@ always owned, never in the world
 		WEAP_GRENADELAUNCHER,
 		NULL,
 		0,
-/* precache */ "models/objects/grenade/tris.md2 weapons/grenlf1a.wav weapons/grenlr1b.wav weapons/grenlb1b.wav"
+/* precache */ "models/objects/grenade/tris.md2 weapons/grenlf1a.wav weapons/grenlr1b.wav weapons/grenlb1b.wav",
+		Weapon_GrenadeLauncher_Altfire
 	},
 
 /*QUAKED weapon_rocketlauncher (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1467,7 +1535,8 @@ always owned, never in the world
 		WEAP_ROCKETLAUNCHER,
 		NULL,
 		0,
-/* precache */ "models/objects/rocket/tris.md2 weapons/rockfly.wav weapons/rocklf1a.wav weapons/rocklr1b.wav models/objects/debris2/tris.md2"
+/* precache */ "models/objects/rocket/tris.md2 weapons/rockfly.wav weapons/rocklf1a.wav weapons/rocklr1b.wav models/objects/debris2/tris.md2",
+		NULL
 	},
 
 /*QUAKED weapon_hyperblaster (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1490,7 +1559,8 @@ always owned, never in the world
 		WEAP_HYPERBLASTER,
 		NULL,
 		0,
-/* precache */ "weapons/hyprbu1a.wav weapons/hyprbl1a.wav weapons/hyprbf1a.wav weapons/hyprbd1a.wav misc/lasfly.wav"
+/* precache */ "weapons/hyprbu1a.wav weapons/hyprbl1a.wav weapons/hyprbf1a.wav weapons/hyprbd1a.wav misc/lasfly.wav",
+		Weapon_HyperBlaster_AltFire
 	},
 
 /*QUAKED weapon_railgun (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1513,7 +1583,8 @@ always owned, never in the world
 		WEAP_RAILGUN,
 		NULL,
 		0,
-/* precache */ "weapons/rg_hum.wav"
+/* precache */ "weapons/rg_hum.wav",
+		NULL
 	},
 
 /*QUAKED weapon_bfg (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1536,7 +1607,8 @@ always owned, never in the world
 		WEAP_BFG,
 		NULL,
 		0,
-/* precache */ "sprites/s_bfg1.sp2 sprites/s_bfg2.sp2 sprites/s_bfg3.sp2 weapons/bfg__f1y.wav weapons/bfg__l1a.wav weapons/bfg__x1b.wav weapons/bfg_hum.wav"
+/* precache */ "sprites/s_bfg1.sp2 sprites/s_bfg2.sp2 sprites/s_bfg3.sp2 weapons/bfg__f1y.wav weapons/bfg__l1a.wav weapons/bfg__x1b.wav weapons/bfg_hum.wav",
+		NULL
 	},
 
 	//
@@ -1563,7 +1635,8 @@ always owned, never in the world
 		0,
 		NULL,
 		AMMO_SHELLS,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED ammo_bullets (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1586,7 +1659,8 @@ always owned, never in the world
 		0,
 		NULL,
 		AMMO_BULLETS,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED ammo_cells (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1609,7 +1683,8 @@ always owned, never in the world
 		0,
 		NULL,
 		AMMO_CELLS,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED ammo_rockets (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1632,7 +1707,8 @@ always owned, never in the world
 		0,
 		NULL,
 		AMMO_ROCKETS,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED ammo_slugs (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1655,7 +1731,8 @@ always owned, never in the world
 		0,
 		NULL,
 		AMMO_SLUGS,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 
@@ -1682,7 +1759,8 @@ always owned, never in the world
 		0,
 		NULL,
 		0,
-/* precache */ "items/damage.wav items/damage2.wav items/damage3.wav"
+/* precache */ "items/damage.wav items/damage2.wav items/damage3.wav",
+		NULL
 	},
 
 /*QUAKED item_invulnerability (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1705,7 +1783,8 @@ always owned, never in the world
 		0,
 		NULL,
 		0,
-/* precache */ "items/protect.wav items/protect2.wav items/protect4.wav"
+/* precache */ "items/protect.wav items/protect2.wav items/protect4.wav",
+		NULL
 	},
 
 /*QUAKED item_silencer (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1728,7 +1807,8 @@ always owned, never in the world
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_breather (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1751,7 +1831,8 @@ always owned, never in the world
 		0,
 		NULL,
 		0,
-/* precache */ "items/airout.wav"
+/* precache */ "items/airout.wav",
+		NULL
 	},
 
 /*QUAKED item_enviro (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1774,7 +1855,8 @@ always owned, never in the world
 		0,
 		NULL,
 		0,
-/* precache */ "items/airout.wav"
+/* precache */ "items/airout.wav",
+		NULL
 	},
 
 /*QUAKED item_ancient_head (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1798,7 +1880,8 @@ Special item that gives +2 to maximum health
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_adrenaline (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1822,7 +1905,8 @@ gives +1 to maximum health
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_bandolier (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1845,7 +1929,8 @@ gives +1 to maximum health
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED item_pack (.3 .3 1) (-16 -16 -16) (16 16 16)
@@ -1868,7 +1953,8 @@ gives +1 to maximum health
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 	//
@@ -1895,7 +1981,8 @@ key for computer centers
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_power_cube (0 .5 .8) (-16 -16 -16) (16 16 16) TRIGGER_SPAWN NO_TOUCH
@@ -1919,7 +2006,8 @@ warehouse circuits
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_pyramid (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -1943,7 +2031,8 @@ key for the entrance of jail3
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_data_spinner (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -1967,7 +2056,8 @@ key for the city computer
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_pass (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -1991,7 +2081,8 @@ security pass for the security level
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_blue_key (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2015,7 +2106,8 @@ normal door key - blue
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_red_key (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2039,7 +2131,8 @@ normal door key - red
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_commander_head (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2063,7 +2156,8 @@ tank commander's head
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 /*QUAKED key_airstrike_target (0 .5 .8) (-16 -16 -16) (16 16 16)
@@ -2087,7 +2181,8 @@ tank commander's head
 		0,
 		NULL,
 		0,
-/* precache */ ""
+/* precache */ "",
+		NULL
 	},
 
 	{
@@ -2108,7 +2203,8 @@ tank commander's head
 		0,
 		NULL,
 		0,
-/* precache */ "items/s_health.wav items/n_health.wav items/l_health.wav items/m_health.wav"
+/* precache */ "items/s_health.wav items/n_health.wav items/l_health.wav items/m_health.wav",
+		NULL
 	},
 
 	// end of list marker

@@ -656,6 +656,11 @@ typedef struct
 #define	MZ_NUKE8			39
 //ROGUE
 
+//FM
+#define MZ_HAND_MISS		40
+#define MZ_HAND_HIT			41
+#define MZ_HAND_HIT_WALL	42
+
 //
 // monster muzzle flashes
 //

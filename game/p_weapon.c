@@ -748,6 +748,47 @@ void Weapon_GrenadeLauncher (edict_t *ent)
 	Weapon_Generic (ent, 5, 16, 59, 64, pause_frames, fire_frames, weapon_grenadelauncher_fire);
 }
 
+void Weapon_GrenadeLauncher_Altfire (edict_t *ent)
+{
+	vec3_t	offset;
+	vec3_t	forward, right;
+	vec3_t	start;
+	int		damage = 40;
+	float	radius;
+
+	if (ent->client->pers.altweap > level.time) return;
+
+	if (ent->client->pers.inventory[ent->client->ammo_index]<5) {
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		return;
+	};
+
+	radius = damage+80;
+	if (is_quad)
+		damage *= 4;
+
+	VectorSet(offset, 8, 8, ent->viewheight-8);
+	AngleVectors (ent->client->v_angle, forward, right, NULL);
+	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
+
+	VectorScale (forward, -2, ent->client->kick_origin);
+	ent->client->kick_angles[0] = -2;
+	
+	fire_spreadgrenade (ent, start, forward, damage, (int)500, (float)0.7, (float)2.5, radius, (int)5);
+
+	gi.WriteByte (svc_muzzleflash);
+	gi.WriteShort (ent-g_edicts);
+	gi.WriteByte (MZ_GRENADE | is_silenced);
+	gi.multicast (ent->s.origin, MULTICAST_PVS);
+
+	PlayerNoise(ent, start, PNOISE_WEAPON);
+
+	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )	ent->client->pers.inventory[ent->client->ammo_index]-=5;
+	if (ent->client->pers.inventory[ent->client->ammo_index]==0) NoAmmoWeaponChange(ent);
+
+	ent->client->pers.altweap = level.time + FRAMETIME * 20;
+}
+
 /*
 ======================================================================
 
@@ -864,6 +905,48 @@ void Weapon_Blaster (edict_t *ent)
 	Weapon_Generic (ent, 4, 8, 52, 55, pause_frames, fire_frames, Weapon_Blaster_Fire);
 }
 
+
+void Weapon_HyperBlaster_AltFire (edict_t *ent)
+{
+	int damage = 20;
+	int ammo_count = 12;
+	int i;
+	float hspread = 0.15;
+	float vspread = 0.2;
+	float r, u;
+	vec3_t offset, forward, right, start, up, end;
+	
+	if (ent->client->pers.altweap > level.time) return;
+
+	if (ent->client->pers.inventory[ent->client->ammo_index] < ammo_count ) {
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		return;
+	}
+
+	ent->client->pers.inventory[ent->client->ammo_index] -= ammo_count;
+	ent->client->pers.altweap = level.time + FRAMETIME * 12;
+
+	if (is_quad)
+		damage *= 4;
+
+	for (i=0; i<8; i++) {
+		AngleVectors (ent->client->v_angle, forward, right, up);
+		VectorSet(offset, 24, 8, ent->viewheight-8);
+
+		P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
+
+		r = crandom() * vspread;
+		u = crandom() * hspread;
+		VectorMA (forward, r, right, forward);
+		VectorMA (forward, u, up, forward);
+
+		fire_blaster (ent, start, forward, damage, 1000, EF_BLASTER | EF_HYPERBLASTER, true);
+	};
+	gi.sound(ent, CHAN_AUTO, gi.soundindex("weapons/hyperblaster/megashot.wav"), 1, ATTN_NORM, 0);
+	if (ent->client->ps.gunframe < 12) {
+		ent->client->ps.gunframe = 12;
+	}
+}
 
 void Weapon_HyperBlaster_Fire (edict_t *ent)
 {
@@ -1042,6 +1125,50 @@ void Weapon_Machinegun (edict_t *ent)
 	static int	fire_frames[]	= {4, 5, 0};
 
 	Weapon_Generic (ent, 3, 5, 45, 49, pause_frames, fire_frames, Machinegun_Fire);
+}
+
+void Weapon_Machinegun_Altfire (edict_t *ent)
+{
+	vec3_t	offset;
+	vec3_t	forward, right;
+	vec3_t	start;
+	int		damage = 120;
+	float	radius;
+	gitem_t	*grenades;
+	int		ammoInd;
+	grenades = FindItem("grenades");
+	ammoInd = ITEM_INDEX(grenades);
+
+	if (ent->client->pers.altweap > level.time) return;
+
+	if (ent->client->pers.inventory[ammoInd]<1) {
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		return;
+	};
+
+	radius = damage+20;
+	if (is_quad)
+		damage *= 4;
+
+	VectorSet(offset, 8, 8, ent->viewheight-8);
+	AngleVectors (ent->client->v_angle, forward, right, NULL);
+	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
+
+	VectorScale (forward, -2, ent->client->kick_origin);
+	ent->client->kick_angles[0] = -1;
+
+	fire_grenade (ent, start, forward, damage, 600, 2.5, radius);
+
+	gi.WriteByte (svc_muzzleflash);
+	gi.WriteShort (ent-g_edicts);
+	gi.WriteByte (MZ_GRENADE | is_silenced);
+	gi.multicast (ent->s.origin, MULTICAST_PVS);
+	
+	PlayerNoise(ent, start, PNOISE_WEAPON);
+	
+	if (! ( (int)dmflags->value & DF_INFINITE_AMMO ) )	ent->client->pers.inventory[ammoInd]-=1;
+	
+	ent->client->pers.altweap = level.time + FRAMETIME * 15;
 }
 
 void Chaingun_Fire (edict_t *ent)
@@ -1289,7 +1416,155 @@ void Weapon_SuperShotgun (edict_t *ent)
 	Weapon_Generic (ent, 6, 17, 57, 61, pause_frames, fire_frames, weapon_supershotgun_fire);
 }
 
+/*
+======================================================================
 
+BARE HANDS
+
+======================================================================
+*/
+
+void weapon_hand_punch (edict_t *ent, int dmg)
+{
+	vec3_t		start;
+	vec3_t		forward, point, right;
+	vec3_t		offset;
+	trace_t		tr;
+	int			kick = (int)((float)dmg*7.5);
+	AngleVectors (ent->client->v_angle, forward, right, NULL);
+
+	VectorScale (forward, -2, ent->client->kick_origin);
+
+	VectorSet(offset, 0, 8,  ent->viewheight-8);
+	P_ProjectSource (ent->client, ent->s.origin, offset, forward, right, start);
+
+	if (is_quad)
+	{
+		dmg *= 4;
+		kick *= 4;
+	}
+
+	VectorMA (ent->s.origin, 120, forward, point);
+	tr = gi.trace (ent->s.origin, NULL, NULL, point, ent, MASK_SHOT);
+	if (tr.fraction < 1)
+	{
+		if (!tr.ent->takedamage) {
+			gi.WriteByte (svc_muzzleflash);
+			gi.WriteShort (ent-g_edicts);
+			gi.WriteByte (MZ_HAND_HIT_WALL);
+			gi.multicast (ent->s.origin, MULTICAST_PVS);
+			PlayerNoise(ent, start, PNOISE_WEAPON);
+			return;
+		} else {
+			T_Damage(tr.ent,ent,ent,forward,tr.endpos,vec3_origin, dmg, kick, DAMAGE_BULLET, MOD_BLASTER);
+			gi.WriteByte (svc_muzzleflash);
+			gi.WriteShort (ent-g_edicts);
+			gi.WriteByte (MZ_HAND_HIT);
+			gi.multicast (ent->s.origin, MULTICAST_PVS);
+			PlayerNoise(ent, start, PNOISE_WEAPON);
+		}
+	} else {
+		gi.WriteByte (svc_muzzleflash);
+		gi.WriteShort (ent-g_edicts);
+		gi.WriteByte (MZ_HAND_MISS);
+		gi.multicast (ent->s.origin, MULTICAST_PVS);
+		PlayerNoise(ent, start, PNOISE_WEAPON);
+	}
+}
+const int HandKick_Yaw = 7;
+const int HandKick_Pitch = 0;
+const int HandKick_Roll = -5;
+
+void Weapon_Hand_RightHit (edict_t *ent,float i)
+{
+	ent->client->kick_angles[0] = sin(i)*HandKick_Pitch;
+	ent->client->kick_angles[1] = sin(i)*HandKick_Yaw;
+	ent->client->kick_angles[2] = sin(i)*HandKick_Roll;
+}
+void Weapon_Hand_LeftHit (edict_t *ent,float i)
+{
+	ent->client->kick_angles[0] = sin(i)*HandKick_Pitch;
+	ent->client->kick_angles[1] = -sin(i)*HandKick_Yaw;
+	ent->client->kick_angles[2] = -sin(i)*HandKick_Roll;
+}
+
+void Weapon_Hand (edict_t *ent)
+{
+	if ((ent->client->newweapon) && (ent->client->weaponstate == WEAPON_READY))
+	{
+		ChangeWeapon (ent);
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_ACTIVATING)
+	{
+		ent->client->weaponstate = WEAPON_READY;
+		ent->client->ps.gunframe = 0;
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_READY)
+	{
+		if ( ((ent->client->latched_buttons|ent->client->buttons) & BUTTON_ATTACK) )
+		{
+			ent->client->latched_buttons &= ~BUTTON_ATTACK;
+			if (random()<0.5) {
+				ent->client->ps.gunframe = HAND_FRAME_atta1;
+			} else {
+				ent->client->ps.gunframe = HAND_FRAME_attb1;
+			};
+			ent->client->weaponstate = WEAPON_FIRING;
+			return;
+		}
+		ent->client->ps.gunframe+=1;
+		if (ent->client->ps.gunframe == HAND_FRAME_hrusu24) ent->client->ps.gunframe = HAND_FRAME_idle1;
+		if (ent->client->ps.gunframe == HAND_FRAME_idle20+1) {
+			if (random()>0.07) {
+				ent->client->ps.gunframe = HAND_FRAME_idle1;
+			} else {
+				ent->client->ps.gunframe = HAND_FRAME_hrusu1;
+			};
+		};
+		if ((ent->client->ps.gunframe > HAND_FRAME_idle20) && (ent->client->ps.gunframe < HAND_FRAME_hrusu1)) {
+			ent->client->ps.gunframe = HAND_FRAME_idle1;
+		};
+		return;
+	}
+
+	if (ent->client->weaponstate == WEAPON_FIRING)
+	{
+		int i;
+		i=ent->client->ps.gunframe;
+		if ((i>=HAND_FRAME_atta3) & (i<=HAND_FRAME_atta6))
+			Weapon_Hand_RightHit(ent,(i-HAND_FRAME_atta2)*3.1415/4);
+		if ((i>=HAND_FRAME_atta7) & (i<=HAND_FRAME_atta10))
+			Weapon_Hand_LeftHit(ent,(i-HAND_FRAME_atta10)*3.1415/4);
+
+
+		if ((i>=HAND_FRAME_attb2) & (i<=HAND_FRAME_attb5))
+			Weapon_Hand_LeftHit(ent,(i-HAND_FRAME_attb2)*3.1415/4);
+		if ((i>=HAND_FRAME_attb6) & (i<=HAND_FRAME_attb9))
+			Weapon_Hand_RightHit(ent,(i-HAND_FRAME_attb6)*3.1415/4);
+
+
+		if (ent->client->ps.gunframe == HAND_FRAME_atta5)
+			weapon_hand_punch(ent, 8);
+		if (ent->client->ps.gunframe == HAND_FRAME_atta9)
+			weapon_hand_punch(ent, 11);
+
+		if (ent->client->ps.gunframe == HAND_FRAME_attb4)
+			weapon_hand_punch(ent, 8);
+		if (ent->client->ps.gunframe == HAND_FRAME_attb8)
+			weapon_hand_punch(ent, 11);
+
+		ent->client->ps.gunframe++;
+		if ((ent->client->ps.gunframe == HAND_FRAME_atta10) || (ent->client->ps.gunframe == HAND_FRAME_attb9))
+		{
+			ent->client->weaponstate = WEAPON_READY;
+		}
+	}
+
+}
 
 /*
 ======================================================================
