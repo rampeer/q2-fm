@@ -339,6 +339,17 @@ void CL_ParseMuzzleFlash (void)
 		dl->color[0] = 1;dl->color[1] = 0.5;dl->color[2] = 0;
 		S_StartSound (NULL, i, CHAN_WEAPON, S_RegisterSound("weapons/grenlf1a.wav"), volume, ATTN_NORM, 0);
 		S_StartSound (NULL, i, CHAN_AUTO,   S_RegisterSound("weapons/grenlr1b.wav"), volume, ATTN_NORM, 0.1);
+	case MZ_HAND_MISS:
+		Com_sprintf(soundname, sizeof(soundname), "weapons/hands/miss%i.wav", (rand() % 2) + 1);
+		S_StartSound (NULL, i, CHAN_WEAPON, S_RegisterSound(soundname), volume, ATTN_NORM, 0);
+		break;
+	case MZ_HAND_HIT:
+		Com_sprintf(soundname, sizeof(soundname), "weapons/hands/punch%i.wav", (rand() % 3) + 1);
+		S_StartSound (NULL, i, CHAN_WEAPON, S_RegisterSound(soundname), volume, ATTN_NORM, 0);
+		break;
+	case MZ_HAND_HIT_WALL:
+		Com_sprintf(soundname, sizeof(soundname), "weapons/hands/wall%i.wav", (rand() % 3) + 1);
+		S_StartSound (NULL, i, CHAN_WEAPON, S_RegisterSound(soundname), volume, ATTN_NORM, 0);
 		break;
 	case MZ_BFG:
 		dl->color[0] = 0;dl->color[1] = 1;dl->color[2] = 0;
