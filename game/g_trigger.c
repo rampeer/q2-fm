@@ -183,7 +183,7 @@ void SP_trigger_once(edict_t *ent)
 	SP_trigger_multiple (ent);
 }
 
-/*QUAKED trigger_relay (.5 .5 .5) (-8 -8 -8) (8 8 8)
+/*QUAKED trigger_relay (.5 .5 .5) (-8 -8 -8) (8 8 8) TURNED_OFF_AT_START
 This fixed size trigger cannot be touched, it can only be fired by other events.
 */
 void trigger_relay_use (edict_t *self, edict_t *other, edict_t *activator)
@@ -193,9 +193,63 @@ void trigger_relay_use (edict_t *self, edict_t *other, edict_t *activator)
 
 void SP_trigger_relay (edict_t *self)
 {
-	self->use = trigger_relay_use;
+	if (!(self->spawnflags & 1)) {
+		self->use = trigger_relay_use;
+	};
 }
 
+
+/*QUAKED trigger_relay_switch (.5 .5 .5) (-8 -8 -8) (8 8 8) TURN_ON TURN_OFF
+This trigger changes state of relay upon activation. It can be turned on, off, or switched (default behavior).
+*/
+void trigger_relay_switch_use (edict_t *self, edict_t *other, edict_t *activator)
+{
+	edict_t *t;
+	t = NULL;
+	while ((t = G_Find (t, FOFS(targetname), self->target)))
+	{
+		if (strcmp(t->classname, "trigger_relay") == 0)
+		{
+			if (self->spawnflags == 1) {
+				t->use = trigger_relay_use;
+			} else if (self->spawnflags == 2) {
+				t->use = NULL;
+			} else {
+				if (self->spawnflags != 0) gi.dprintf("Wrong spawnflags set for %s at %s\n", self->classname, vtos(self->s.origin));
+				if (t->use) {
+					t->use = NULL;
+				} else {
+					t->use = trigger_relay_use;
+				};
+			};
+		} else {
+			gi.dprintf("trigger_relay_switch target %s is not a relay\n", self->target);
+		};
+		if (!self->inuse)
+		{
+			gi.dprintf("entity was removed while using targets\n");
+			return;
+		}
+	};
+}
+
+void trigger_relay_switch_init(edict_t *self)
+{
+	if (!self->target)
+	{
+		gi.dprintf("trigger_relay_switch has no target\n");
+		return;
+	}
+
+	self->use = trigger_relay_switch_use;
+	self->svflags = SVF_NOCLIENT;
+}
+
+void SP_trigger_relay_switch (edict_t *self)
+{
+	self->think = trigger_relay_switch_init;
+	self->nextthink = level.time + FRAMETIME;
+}
 
 /*
 ==============================================================================
