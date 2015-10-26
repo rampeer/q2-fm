@@ -1694,7 +1694,7 @@ void SP_func_train (edict_t *self)
 }
 
 
-/*QUAKED trigger_elevator (0.3 0.1 0.6) (-8 -8 -8) (8 8 8)
+/*QUAKED trigger_elevator (0.3 0.1 0.6) (-8 -8 -8) (8 8 8) FORCE_TRAIN_TO_MOVE
 */
 void trigger_elevator_use (edict_t *self, edict_t *other, edict_t *activator)
 {
@@ -1702,8 +1702,10 @@ void trigger_elevator_use (edict_t *self, edict_t *other, edict_t *activator)
 
 	if (self->movetarget->nextthink)
 	{
-//		gi.dprintf("elevator busy\n");
-		return;
+		//Elevator can be busy, but with this spawnflag forces it to move
+		if (!(self->spawnflags & 1)) {
+			return;
+		};
 	}
 
 	if (!other->pathtarget)
@@ -1720,7 +1722,13 @@ void trigger_elevator_use (edict_t *self, edict_t *other, edict_t *activator)
 	}
 
 	self->movetarget->target_ent = target;
-	train_resume (self->movetarget);
+	self->movetarget->target = target->targetname;	//TODO: this can cause severe glitches with save/load/mem allocation
+	
+	if (self->movetarget->nextthink) {
+		train_next(self->movetarget);
+	} else {
+		train_resume (self->movetarget);
+	};
 }
 
 void trigger_elevator_init (edict_t *self)
