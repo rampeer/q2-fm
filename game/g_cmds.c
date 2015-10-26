@@ -900,6 +900,17 @@ void Cmd_PlayerList_f(edict_t *ent)
 }
 
 
+void Cmd_Altfire_f(edict_t *ent)
+{
+	if (ent->client) {
+		if (ent->client->pers.weapon) {
+			if (ent->client->pers.weapon->altfire) {
+				ent->client->pers.weapon->altfire (ent);
+			};
+		};
+	};
+}
+
 /*
 =================
 ClientCommand
@@ -987,6 +998,11 @@ void ClientCommand (edict_t *ent)
 		Cmd_Wave_f (ent);
 	else if (Q_stricmp(cmd, "playerlist") == 0)
 		Cmd_PlayerList_f(ent);
+
+	
+	else if (Q_stricmp(cmd, "altfire") == 0)
+		Cmd_Altfire_f(ent);
+
 	else	// anything that doesn't match a command will be a chat
 		Cmd_Say_f (ent, false, true);
 }
