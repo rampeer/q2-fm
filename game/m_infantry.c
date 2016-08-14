@@ -37,6 +37,7 @@ static int	sound_die1;
 static int	sound_die2;
 
 static int	sound_gunshot;
+static int	sound_grenade_warning;
 static int	sound_weapon_cock;
 static int	sound_punch_swing;
 static int	sound_punch_hit;
@@ -260,21 +261,18 @@ vec3_t	aimangles[] =
 void InfantryMachineGun (edict_t *self)
 {
 	vec3_t	start, target;
-	vec3_t	forward, right;
+	vec3_t	forward, right, aim;
 	vec3_t	vec;
 	int		flash_number;
 
 	if (self->s.frame == FRAME_attak111)
 	{
 		flash_number = MZ2_INFANTRY_MACHINEGUN_1;
-		AngleVectors (self->s.angles, forward, right, NULL);
-		G_ProjectSource (self->s.origin, monster_flash_offset[flash_number], forward, right, start);
-
 		if (self->enemy)
 		{
-			VectorMA (self->enemy->s.origin, -0.2, self->enemy->velocity, target);
-			target[2] += self->enemy->viewheight;
-			VectorSubtract (target, start, forward);
+			AngleVectors (self->s.angles, forward, right, NULL);
+			G_ProjectSource (self->s.origin, monster_flash_offset[flash_number], forward, right, start);
+			ai_calcattack(self,self->enemy,forward,ATYPE_BULLET,2000,flash_number);
 			VectorNormalize (forward);
 		}
 		else
@@ -294,11 +292,6 @@ void InfantryMachineGun (edict_t *self)
 	}
 
 	monster_fire_bullet (self, start, forward, 3, 4, DEFAULT_BULLET_HSPREAD, DEFAULT_BULLET_VSPREAD, flash_number);
-}
-
-void infantry_sight (edict_t *self, edict_t *other)
-{
-	gi.sound (self, CHAN_BODY, sound_sight, 1, ATTN_NORM, 0);
 }
 
 void infantry_dead (edict_t *self)
@@ -520,6 +513,11 @@ void infantry_swing (edict_t *self)
 	gi.sound (self, CHAN_WEAPON, sound_punch_swing, 1, ATTN_NORM, 0);
 }
 
+void infantry_grenade_warning (edict_t *self)
+{
+	gi.sound (self, CHAN_AUTO, sound_grenade_warning, 1, ATTN_NORM, 0);
+}
+
 void infantry_smack (edict_t *self)
 {
 	vec3_t	aim;
@@ -527,6 +525,18 @@ void infantry_smack (edict_t *self)
 	VectorSet (aim, MELEE_DISTANCE, 0, 0);
 	if (fire_hit (self, aim, (5 + (rand() % 5)), 50))
 		gi.sound (self, CHAN_WEAPON, sound_punch_hit, 1, ATTN_NORM, 0);
+}
+
+void infantry_grenade (edict_t *self)
+{
+	vec3_t	start;
+	vec3_t	forward, right;
+	vec3_t	aim;
+	AngleVectors (self->s.angles, forward, right, NULL);
+	G_ProjectSource (self->s.origin, monster_flash_offset[MZ2_INFANTRY_MACHINEGUN_4], forward, right, start);
+	ai_calcattack(self, self->enemy, aim, ATYPE_PARAGREN, 600, MZ2_INFANTRY_MACHINEGUN_4);
+	VectorNormalize(aim);
+	monster_fire_grenade2 (self, start, aim, 50, 600, MZ2_GUNNER_GRENADE_1);	//Hack to remove weird sound
 }
 
 mframe_t infantry_frames_attack2 [] =
@@ -542,12 +552,41 @@ mframe_t infantry_frames_attack2 [] =
 };
 mmove_t infantry_move_attack2 = {FRAME_attak201, FRAME_attak208, infantry_frames_attack2, infantry_run};
 
+mframe_t infantry_frames_attack3 [] =
+{
+	ai_charge, 3, infantry_grenade_warning,
+	ai_charge, 6, NULL,
+	ai_charge, 0, NULL,
+	ai_charge, 8, infantry_grenade,
+	ai_charge, 5, NULL,
+	ai_charge, 8, NULL,
+	ai_charge, 6, NULL,
+	ai_charge, 3, NULL,
+};
+mmove_t infantry_move_attack3 = {FRAME_attak201, FRAME_attak208, infantry_frames_attack3, infantry_run};
+
+void infantry_sight (edict_t *self, edict_t *other)
+{
+	if (range(self, other) >= RANGE_MID) {
+		if (random() > 0.6) {
+			self->monsterinfo.currentmove = &infantry_move_attack3;
+			return;
+		};
+	};
+	gi.sound (self, CHAN_BODY, sound_sight, 1, ATTN_NORM, 0);
+}
+
 void infantry_attack(edict_t *self)
 {
 	if (range (self, self->enemy) == RANGE_MELEE)
 		self->monsterinfo.currentmove = &infantry_move_attack2;
-	else
-		self->monsterinfo.currentmove = &infantry_move_attack1;
+	else {
+		if (random()>0.75) {
+			self->monsterinfo.currentmove = &infantry_move_attack3;
+		} else {
+			self->monsterinfo.currentmove = &infantry_move_attack1;
+		};
+	};
 }
 
 
@@ -570,6 +609,7 @@ void SP_monster_infantry (edict_t *self)
 	sound_weapon_cock = gi.soundindex ("infantry/infatck3.wav");
 	sound_punch_swing = gi.soundindex ("infantry/infatck2.wav");
 	sound_punch_hit = gi.soundindex ("infantry/melee2.wav");
+	sound_grenade_warning = gi.soundindex ("infantry/grenade1.wav");
 	
 	sound_sight = gi.soundindex ("infantry/infsght1.wav");
 	sound_search = gi.soundindex ("infantry/infsrch1.wav");
