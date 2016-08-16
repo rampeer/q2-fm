@@ -41,7 +41,8 @@ static int	sound_step;
 static int	sound_sight;
 static int	sound_windup;
 static int	sound_strike;
-
+static double step_kick_radius;
+mmove_t tank_move_attack_post_rocket;
 //
 // misc
 //
@@ -54,7 +55,26 @@ void tank_sight (edict_t *self, edict_t *other)
 
 void tank_footstep (edict_t *self)
 {
+	edict_t	*ent = NULL;
+	int i;
+	vec3_t vec;
+	float dist;
 	gi.sound (self, CHAN_BODY, sound_step, 1, ATTN_NORM, 0);
+
+	while ((ent = findradius(ent, self->s.origin, step_kick_radius)) != NULL)  
+	{
+		if (ent->client) {
+			VectorSubtract(ent->s.origin, self->s.origin, vec);
+			dist = VectorLength(vec);
+			for (i=1 ; i<3 ; i++)
+			{
+				ent->client->kick_origin[i] += crandom() * 2.0 * (1.0 - dist / step_kick_radius);
+				ent->client->kick_angles[i] += crandom() * 1.5 * (1.0 - dist / step_kick_radius);
+			}
+			ent->client->kick_origin[0] += 2.0 * (1.0 - dist / step_kick_radius);
+			ent->client->kick_angles[0] += 2.0 * (1.0 - dist / step_kick_radius);
+		}
+	}
 }
 
 void tank_thud (edict_t *self)
@@ -350,6 +370,9 @@ void TankBlaster (edict_t *self)
 	end[2] += self->enemy->viewheight;
 	VectorSubtract (end, start, dir);
 
+	ai_calcattack(self, self->enemy, dir, ATYPE_HORISONTAL, 800, flash_number);
+	VectorNormalize(dir);
+
 	monster_fire_blaster (self, start, dir, 30, 800, flash_number, EF_BLASTER);
 }	
 
@@ -376,13 +399,54 @@ void TankRocket (edict_t *self)
 	AngleVectors (self->s.angles, forward, right, NULL);
 	G_ProjectSource (self->s.origin, monster_flash_offset[flash_number], forward, right, start);
 
-	VectorCopy (self->enemy->s.origin, vec);
-	vec[2] += self->enemy->viewheight;
-	VectorSubtract (vec, start, dir);
+	ai_calcattack (self, self->enemy, dir, ATYPE_SPLASH, 550, flash_number);
 	VectorNormalize (dir);
-
-	monster_fire_rocket (self, start, dir, 50, 550, flash_number);
+	monster_fire_rocket (self, start, dir, 100, 550, flash_number);
 }	
+
+void TankMultiRocket (edict_t *self)
+{
+	const float r_speed = 500;
+	float teta;
+	vec3_t	forward, right;
+	vec3_t	start;
+	vec3_t	dir;
+	vec3_t	vec;
+	vec3_t	npos;
+
+	if (random() > 0.2) { 
+		TankRocket(self); 
+		return; 
+	}
+	AngleVectors (self->s.angles, forward, right, NULL);
+	G_ProjectSource (self->s.origin, monster_flash_offset[MZ2_TANK_ROCKET_1], forward, right, start);
+	VectorSubtract (self->enemy->s.origin, start, npos);
+	teta = VectorLength(npos) / (2*r_speed);
+	npos[0]+=self->enemy->velocity[0]*teta;
+	npos[1]+=self->enemy->velocity[1]*teta;
+	npos[2]+=self->enemy->velocity[2]*teta;
+
+	VectorCopy (npos, vec);
+	vec[1] += 65;
+	vec[2] += self->enemy->mins[2];
+	VectorNormalize (vec);
+	monster_fire_rocket (self, start, vec, 75, 550, MZ2_TANK_ROCKET_1);
+
+	VectorCopy (npos, vec);
+	vec[0] -= 30;
+	vec[1] -= 45;
+	vec[2] -= 32;
+	VectorNormalize (vec);
+	monster_fire_rocket (self, start, vec, 75, 550, MZ2_TANK_ROCKET_1);
+
+	VectorCopy (npos, vec);
+	vec[0] += 30;
+	vec[1] -= 45;
+	VectorNormalize (vec);
+	monster_fire_rocket (self, start, vec, 75, 550, MZ2_TANK_ROCKET_1);
+
+	self->monsterinfo.currentmove = &tank_move_attack_post_rocket;
+}
 
 void TankMachineGun (edict_t *self)
 {
@@ -559,7 +623,7 @@ mframe_t tank_frames_attack_fire_rocket [] =
 {
 	ai_charge, -3, NULL,			// Loop Start	22 
 	ai_charge, 0,  NULL,
-	ai_charge, 0,  TankRocket,		// 24
+	ai_charge, 0,  TankMultiRocket,		// 24
 	ai_charge, 0,  NULL,
 	ai_charge, 0,  NULL,
 	ai_charge, 0,  TankRocket,
@@ -672,21 +736,21 @@ void tank_attack(edict_t *self)
 
 	if (range <= 125)
 	{
-		if (r < 0.4)
+		if (r < 0.3)
 			self->monsterinfo.currentmove = &tank_move_attack_chain;
 		else 
 			self->monsterinfo.currentmove = &tank_move_attack_blast;
 	}
 	else if (range <= 250)
 	{
-		if (r < 0.5)
+		if (r < 0.7)
 			self->monsterinfo.currentmove = &tank_move_attack_chain;
 		else
 			self->monsterinfo.currentmove = &tank_move_attack_blast;
 	}
 	else
 	{
-		if (r < 0.33)
+		if (r < 0.2)
 			self->monsterinfo.currentmove = &tank_move_attack_chain;
 		else if (r < 0.66)
 		{
@@ -830,6 +894,7 @@ void SP_monster_tank (edict_t *self)
 		self->health = 750;
 		self->gib_health = -200;
 	}
+	step_kick_radius = 350.0;
 
 	self->mass = 500;
 
