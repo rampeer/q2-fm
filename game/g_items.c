@@ -42,6 +42,7 @@ void Weapon_BFG (edict_t *ent);
 void Weapon_GrenadeLauncher_Altfire (edict_t *ent);
 void Weapon_Machinegun_Altfire (edict_t *ent);
 void Weapon_HyperBlaster_AltFire(edict_t *ent);
+void Weapon_RocketLauncher_Altfire (edict_t *ent);
 
 gitem_armor_t jacketarmor_info	= { 25,  50, .30, .00, ARMOR_JACKET};
 gitem_armor_t combatarmor_info	= { 50, 100, .60, .30, ARMOR_COMBAT};
@@ -1536,7 +1537,7 @@ always owned, never in the world
 		NULL,
 		0,
 /* precache */ "models/objects/rocket/tris.md2 weapons/rockfly.wav weapons/rocklf1a.wav weapons/rocklr1b.wav models/objects/debris2/tris.md2",
-		NULL
+		Weapon_RocketLauncher_Altfire
 	},
 
 /*QUAKED weapon_hyperblaster (.3 .3 1) (-16 -16 -16) (16 16 16)

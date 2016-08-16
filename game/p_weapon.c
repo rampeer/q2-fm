@@ -805,7 +805,11 @@ void Weapon_RocketLauncher_Fire (edict_t *ent)
 	float	damage_radius;
 	int		radius_damage;
 
-	damage = 100 + (int)(random() * 20.0);
+	if (ent->client->altfire_cooldown > level.time) {
+		damage = 60 + (int)(random() * 10.0);
+	} else {
+		damage = 100 + (int)(random() * 20.0);
+	}
 	radius_damage = 120;
 	damage_radius = 120;
 	if (is_quad)
@@ -841,8 +845,27 @@ void Weapon_RocketLauncher (edict_t *ent)
 {
 	static int	pause_frames[]	= {25, 33, 42, 50, 0};
 	static int	fire_frames[]	= {5, 0};
+	static int	alt_fire_frames[]	= {5, 6, 7, 0};
 
-	Weapon_Generic (ent, 4, 12, 50, 54, pause_frames, fire_frames, Weapon_RocketLauncher_Fire);
+	if (ent->client->altfire_cooldown > level.time) {
+		Weapon_Generic (ent, 4, 12, 50, 54, pause_frames, alt_fire_frames, Weapon_RocketLauncher_Fire);
+	} else {
+		Weapon_Generic (ent, 4, 12, 50, 54, pause_frames, fire_frames, Weapon_RocketLauncher_Fire);
+	}
+}
+
+void Weapon_RocketLauncher_Altfire (edict_t *ent)
+{
+	if (ent->client->altfire_cooldown > level.time) return;
+
+	if (ent->client->pers.inventory[ent->client->ammo_index] < 3) {
+		gi.sound(ent, CHAN_VOICE, gi.soundindex("weapons/noammo.wav"), 1, ATTN_NORM, 0);
+		return;
+	};
+	ent->client->altfire_cooldown = level.time + FRAMETIME * 8;
+	ent->client->weaponstate = WEAPON_FIRING;
+	ent->client->ps.gunframe = 4;
+	Weapon_RocketLauncher(ent);
 }
 
 
